@@ -72,7 +72,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .v-bar .ttl{font-size:18px}
 .v-id{padding:10px 20px;font-size:14px;display:flex;justify-content:space-between;gap:12px;background:var(--bg);border-bottom:1px solid var(--line)}
 .v-id .st{font-weight:700;color:var(--yes)}
-.v-id .st.warn{color:var(--no)}
+.v-id .st.wait{color:#B45309}
 .v-main{flex:1;display:flex;flex-direction:column;padding:18px 20px 20px;gap:16px}
 .v-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:24px}
 .v-q{font-size:21px;font-weight:700;line-height:1.45;word-break:break-word}
@@ -98,12 +98,16 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .a-grid{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;padding-top:24px;padding-bottom:48px}
 .a-side{flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:12px}
 .a-main{flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:24px}
-.m-row{display:flex;align-items:center;gap:10px;padding:5px 0;border-top:1px solid var(--hair)}
+.m-row{display:flex;align-items:center;gap:12px;min-height:48px;padding:4px 0;border-top:1px solid var(--hair);cursor:pointer}
+.m-chk{width:22px;height:22px;flex:none;margin:0;accent-color:var(--navy);cursor:pointer}
+.m-tag{flex:none;font-size:13px;font-weight:700;color:var(--muted);min-width:42px;text-align:right}
+.m-tag.on{color:var(--yes)}
 
 .m-name{font-size:14px;flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
 .m-st{font-size:12px;color:var(--muted)}
 .m-st b{color:var(--muted)}
-.m-st b.on{color:var(--yes)}
+.m-st b.on{color:var(--ink)}
+.m-st b.wait{color:#B45309}
 .m-row .btn{flex:none}
 .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 @media (max-width:640px){.form-grid{grid-template-columns:minmax(0,1fr)}}
@@ -260,10 +264,10 @@ function Voter() {
 
   function render() {
     const v = data.vote;
-    $('#me').textContent = `${data.me.district}　${data.me.name}`;
+    $('#me').textContent = data.me.district ? `${data.me.name}　${data.me.district}` : data.me.name;
     const st = $('#status');
-    st.className = 'st' + (data.present ? '' : ' warn');
-    st.textContent = data.present ? '已簽到' : '未簽到（請洽秘書處）';
+    st.className = 'st' + (data.present ? '' : ' wait');
+    st.textContent = data.present ? '已確認出席' : '待秘書處確認出席';
 
     let mode = 'wait';
     if (v && v.status === 'voting') mode = v.eligible ? 'ballot' : 'inelig';
@@ -275,7 +279,7 @@ function Voter() {
       if (mode === 'wait') {
         main.innerHTML = `<div class="v-empty"><h2 class="serif" style="font-size:20px">目前無進行中之表決</h2><p class="muted" style="line-height:1.7">秘書處宣布開始表決後，本頁將自動顯示表決選項。</p></div>`;
       } else if (mode === 'inelig') {
-        main.innerHTML = `${head(v, false)}<div class="v-empty"><h2 class="serif" style="font-size:18px">表決開始時尚未完成簽到</h2><p class="muted" style="line-height:1.7">本案無法參與表決，如有疑問請洽秘書處。</p></div>`;
+        main.innerHTML = `${head(v, false)}<div class="v-empty"><h2 class="serif" style="font-size:18px">表決開始時尚未確認出席</h2><p class="muted" style="line-height:1.7">本案無法參與表決，如有疑問請洽秘書處。</p></div>`;
       } else if (mode === 'closed') {
         main.innerHTML = `${head(v, false)}
           <div class="strip"><div style="flex-direction:row;justify-content:space-between;align-items:center;padding:12px 0"><span class="muted">本人投票</span><span class="serif" id="mine" style="font-size:24px;font-weight:700"></span></div></div>
@@ -394,7 +398,7 @@ function VoterLogin() {
   $('#app').innerHTML = loginPage('議會表決系統',
     `<label class="field">帳號<input name="account" autocomplete="username" autocapitalize="none" required></label>
      <label class="field">密碼<input name="password" type="password" autocomplete="current-password" required></label>`,
-    '登入並簽到', '帳號由議會秘書處核發。同一帳號於新裝置登入後，原裝置將自動登出。');
+    '登入', '帳號由議會秘書處核發，登入後請待秘書處確認出席。同一帳號於新裝置登入後，原裝置將自動登出。');
   $('#f').onsubmit = async e => {
     e.preventDefault();
     const fd = new FormData(e.target);
@@ -427,7 +431,7 @@ function Admin() {
     <div class="wrap a-grid">
       <aside class="card a-side">
         <div class="row between" style="padding-bottom:10px;border-bottom:1px solid var(--line)"><h2 class="card-title">出席簽到</h2><span class="num" style="font-size:24px;font-weight:700" id="pc"></span></div>
-        <p class="muted small">議員以帳號登入即完成簽到。中途離席或補簽，請於此處調整；表決開始後之異動，自下一案表決起生效。</p>
+        <p class="muted small">議員登入後，請確認其本人在場，再勾選「出席」。<b>僅勾選出席者可參與表決</b>；中途離席請取消勾選。表決開始後之異動，自下一案表決起生效。</p>
         <div id="members" style="max-height:62vh;overflow-y:auto;padding-right:4px"></div>
         <div class="row" style="padding-top:8px">
           <button class="btn sm" id="reload">重新讀取名單</button>
@@ -471,11 +475,16 @@ function Admin() {
     $('#meeting').textContent = data.meeting || '';
     $('#pc').innerHTML = `${data.presentCount}<span style="font-size:15px;color:var(--muted)"> / ${data.total}</span>`;
     $('#members').innerHTML = data.members.map(m => `
-      <div class="m-row">
-        <span class="m-name"><span><b>${esc(m.name)}</b>　<span class="muted" style="font-size:13px">${esc(m.district)}</span></span><span class="m-st"><b class="${m.present ? 'on' : ''}">${m.present ? '已簽到' : '未簽到'}</b>${m.online ? '・已登入' : ''}</span></span>
-        <button class="btn sm" data-acct="${esc(m.account)}" data-p="${m.present ? 0 : 1}">${m.present ? '設為離席' : '手動簽到'}</button>
-      </div>`).join('');
-    $('#members').querySelectorAll('button').forEach(b => b.onclick = () => act('setPresence', { account: b.dataset.acct, present: b.dataset.p === '1' }));
+      <label class="m-row">
+        <input type="checkbox" class="m-chk" data-acct="${esc(m.account)}" ${m.present ? 'checked' : ''} aria-label="${esc(m.name)} 出席">
+        <span class="m-name"><span><b>${esc(m.name)}</b>${m.district ? `　<span class="muted" style="font-size:13px">${esc(m.district)}</span>` : ''}</span>
+          <span class="m-st">${m.online ? (m.present ? '<b class="on">已登入</b>' : '<b class="wait">已登入，待確認出席</b>') : '未登入'}</span></span>
+        <span class="m-tag ${m.present ? 'on' : ''}">${m.present ? '出席' : '未出席'}</span>
+      </label>`).join('');
+    $('#members').querySelectorAll('.m-chk').forEach(c => c.onchange = () => {
+      c.disabled = true;
+      act('setPresence', { account: c.dataset.acct, present: c.checked });
+    });
   }
 
   function renderHistory() {
@@ -690,15 +699,15 @@ function Screen() {
 
   /* 名牌自適應排版：量測名單區實際大小，在 2–12 欄中挑字最大的排法；
      字級差距約 15% 以內時，優先選空格最少、名牌比例最協調者。視窗大小改變時自動重排。 */
-  function fit(n) {
+  function fit(n, hasD) {
     const box = $('#body').getBoundingClientRect();
     const W = Math.max(200, box.width - 2), H = Math.max(120, box.height - 2);
     const u = Math.min(innerWidth, innerHeight * 1.778) / 100;
     const cands = [];
     for (let c = 2; c <= 12; c++) {
       const r = Math.ceil(n / c), w = W / c, h = H / r;
-      // 名字最多約 4.5 字寬；院別行約佔名字高度的 0.6
-      const nf = Math.min(2.8 * u, w / 5, h / 2.2);
+      // 名字最多約 4.5 字寬；有選區時多一行小字，名字可用高度較少
+      const nf = Math.min(2.8 * u, w / 5, h / (hasD ? 2.2 : 1.6));
       cands.push({ c, nf, w, waste: c * r - n, shape: Math.abs(Math.log((w / h) / 2.2)) });
     }
     // 字級在最大值 85% 以內者，優先選空格最少、名牌比例（長寬約 2.2）最協調者
@@ -710,7 +719,7 @@ function Screen() {
   }
 
   function tiles(list, colorOf) {
-    const L = fit(Math.max(1, list.length));
+    const L = fit(Math.max(1, list.length), list.some(t => t.district));
     const cells = list.map(t => `<div class="s-tile">${t.district ? `<span class="d">${esc(t.district)}</span>` : ''}<span class="n" style="color:${colorOf(t)}">${esc(t.name)}</span></div>`);
     while (cells.length % L.cols) cells.push('<div class="s-tile"></div>');
     return `<div class="s-grid" style="grid-template-columns:repeat(${L.cols},minmax(0,1fr));--nfp:${L.nf}px;--dfp:${L.df}px">${cells.join('')}</div>`;
@@ -726,7 +735,7 @@ function Screen() {
       $('#sl').textContent = '本次會議';
       $('#title').textContent = '目前無進行中之表決';
       $('#info').innerHTML = cell('出席人數', `<span class="v num">${data.presentCount}</span>`) + cell('全體議員', `<span class="v num">${data.total}</span>`) +
-        cell('說明', '<span class="v" style="font-weight:500">名單中深色為已簽到議員，淺灰為未出席</span>', '', '');
+        cell('說明', '<span class="v" style="font-weight:500">名單中深色為經確認出席之議員，淺灰為未出席</span>', '', '');
       $('#foot').innerHTML = '';
       $('#foot').style.display = 'none';
       $('#body').innerHTML = tiles(data.members, m => m.present ? 'var(--none)' : 'var(--away)');
