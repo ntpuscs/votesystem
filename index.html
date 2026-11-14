@@ -99,7 +99,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .a-side{flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:12px}
 .a-main{flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:24px}
 .m-row{display:flex;align-items:center;gap:10px;padding:5px 0;border-top:1px solid var(--hair)}
-.m-dist{font-size:14px;font-weight:700;width:68px;flex:none}
+
 .m-name{font-size:14px;flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
 .m-st{font-size:12px;color:var(--muted)}
 .m-st b{color:var(--muted)}
@@ -137,8 +137,9 @@ td.wide{white-space:normal;min-width:280px}
 .s-info .res{font-family:'Noto Serif TC',serif;font-size:calc(var(--u)*2.4);font-weight:900;line-height:1.15}
 .s-body{flex:1;min-height:0;display:flex;flex-direction:column}
 .s-grid{flex:1;min-height:0;display:grid;grid-auto-rows:minmax(0,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
-.s-tile{background:#fff;min-height:0;min-width:0;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center;padding:calc(var(--u)*.3)}
-.s-tile .n{font-family:'Noto Serif TC',serif;font-size:calc(var(--u)*var(--nf,2.6));font-weight:700;letter-spacing:.06em;line-height:1.2;white-space:nowrap}
+.s-tile{background:#fff;min-height:0;min-width:0;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--dfp,14px)*.3);text-align:center;padding:4px}
+.s-tile .d{font-size:var(--dfp,14px);color:var(--muted);line-height:1.2;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.s-tile .n{font-family:'Noto Serif TC',serif;font-size:var(--nfp,40px);font-weight:700;letter-spacing:.06em;line-height:1.2;white-space:nowrap}
 .s-anon{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--u)*.8);border:1px solid var(--line);background:#F6F7F9}
 .s-anon b{font-family:'Noto Serif TC',serif;font-size:calc(var(--u)*2.6);font-weight:700;letter-spacing:.2em}
 .s-anon span{font-size:calc(var(--u)*1.25);color:var(--muted)}
@@ -155,7 +156,7 @@ td.wide{white-space:normal;min-width:280px}
 <div id="app"></div>
 <script>
 /* ═══════════ 設定：部署 Apps Script 後，把網頁應用程式網址貼在這裡 ═══════════ */
-const API_URL = 'https://script.google.com/macros/s/AKfycbyoa_fyerMNlSjxzfpj4qsl7i9b-hyx6C09VPBycKbeWFyClnAjUSvUvEzZ1kjxlliZ/exec';
+const API_URL = 'https://script.google.com/macros/library/d/1gCx-6Y-6DYADeiL1GMhSb9txWWUkaqa302w-ZWJsDMdT4r7H0Ys2lvRS/2';
 const POLL_MS = { voter: 2000, admin: 2000, screen: 1500 };
 /* ════════════════════════════════════════════════════════════════════════════ */
 
@@ -471,8 +472,7 @@ function Admin() {
     $('#pc').innerHTML = `${data.presentCount}<span style="font-size:15px;color:var(--muted)"> / ${data.total}</span>`;
     $('#members').innerHTML = data.members.map(m => `
       <div class="m-row">
-        <span class="m-dist">${esc(m.district)}</span>
-        <span class="m-name"><span>${esc(m.name)}</span><span class="m-st"><b class="${m.present ? 'on' : ''}">${m.present ? '已簽到' : '未簽到'}</b>${m.online ? '・已登入' : ''}</span></span>
+        <span class="m-name"><span><b>${esc(m.name)}</b>　<span class="muted" style="font-size:13px">${esc(m.district)}</span></span><span class="m-st"><b class="${m.present ? 'on' : ''}">${m.present ? '已簽到' : '未簽到'}</b>${m.online ? '・已登入' : ''}</span></span>
         <button class="btn sm" data-acct="${esc(m.account)}" data-p="${m.present ? 0 : 1}">${m.present ? '設為離席' : '手動簽到'}</button>
       </div>`).join('');
     $('#members').querySelectorAll('button').forEach(b => b.onclick = () => act('setPresence', { account: b.dataset.acct, present: b.dataset.p === '1' }));
@@ -595,7 +595,7 @@ function Admin() {
     let s = `${v.billId ? v.billId + ' ' : ''}${v.title}：${v.named ? '記名' : '不記名'}表決，出席 ${t.eligible} 人，${L.yes} ${t.yes} 票、${L.no} ${t.no} 票${v.kind === '人事案' ? '' : `、棄權 ${t.abs} 票`}，未投票 ${t.notVoted} 人；依${v.rule}，表決結果：${v.result.text}${v.result.tone === 'tie' ? '，由主席裁決' : ''}。`;
     if (v.named && v.tiles) {
       const g = {};
-      v.tiles.forEach(x => { if (x.s !== 'away') (g[x.s] = g[x.s] || []).push(x.district + x.name); });
+      v.tiles.forEach(x => { if (x.s !== 'away') (g[x.s] = g[x.s] || []).push(x.name + (x.district ? `（${x.district}）` : '')); });
       const lines = keysFor(v.kind).concat(['none']).filter(k => g[k]).map(k => `${k === 'none' ? '未投票' : L[k]}：${g[k].join('、')}`);
       if (lines.length) s += '\n' + lines.join('\n');
     }
@@ -688,15 +688,32 @@ function Screen() {
   };
   tickers.add(tick);
 
-  /* 名牌排版：以 10–20 席為主（5 欄）；8 席以下 4 欄；超過 20 席自動增加欄數。空格補白。 */
+  /* 名牌自適應排版：量測名單區實際大小，在 2–12 欄中挑字最大的排法；
+     字級差距約 15% 以內時，優先選空格最少、名牌比例最協調者。視窗大小改變時自動重排。 */
+  function fit(n) {
+    const box = $('#body').getBoundingClientRect();
+    const W = Math.max(200, box.width - 2), H = Math.max(120, box.height - 2);
+    const u = Math.min(innerWidth, innerHeight * 1.778) / 100;
+    const cands = [];
+    for (let c = 2; c <= 12; c++) {
+      const r = Math.ceil(n / c), w = W / c, h = H / r;
+      // 名字最多約 4.5 字寬；院別行約佔名字高度的 0.6
+      const nf = Math.min(2.8 * u, w / 5, h / 2.2);
+      cands.push({ c, nf, w, waste: c * r - n, shape: Math.abs(Math.log((w / h) / 2.2)) });
+    }
+    // 字級在最大值 85% 以內者，優先選空格最少、名牌比例（長寬約 2.2）最協調者
+    const maxNf = Math.max(...cands.map(x => x.nf));
+    const best = cands.filter(x => x.nf >= maxNf * 0.85)
+      .sort((a, b) => a.waste - b.waste || a.shape - b.shape || b.nf - a.nf)[0];
+    const df = Math.min(1.1 * u, Math.max(0.7 * u, best.nf * 0.42), best.w / 7.5);
+    return { cols: best.c, nf: Math.floor(best.nf), df: Math.floor(df) };
+  }
+
   function tiles(list, colorOf) {
-    const n = Math.max(1, list.length);
-    const cols = n <= 8 ? 4 : n <= 20 ? 5 : Math.ceil(n / 5);
-    const rows = Math.ceil(n / cols);
-    const nf = Math.min(2.6, (94 / cols) * 0.2, (29 / rows) * 0.4);   // 以 --u 為單位
-    const cells = list.map(t => `<div class="s-tile"><span class="n" style="color:${colorOf(t)}">${esc(t.name)}</span></div>`);
-    while (cells.length % cols) cells.push('<div class="s-tile"></div>');
-    return `<div class="s-grid" style="grid-template-columns:repeat(${cols},minmax(0,1fr));--nf:${nf.toFixed(2)}">${cells.join('')}</div>`;
+    const L = fit(Math.max(1, list.length));
+    const cells = list.map(t => `<div class="s-tile">${t.district ? `<span class="d">${esc(t.district)}</span>` : ''}<span class="n" style="color:${colorOf(t)}">${esc(t.name)}</span></div>`);
+    while (cells.length % L.cols) cells.push('<div class="s-tile"></div>');
+    return `<div class="s-grid" style="grid-template-columns:repeat(${L.cols},minmax(0,1fr));--nfp:${L.nf}px;--dfp:${L.df}px">${cells.join('')}</div>`;
   }
 
   const cell = (k, v, x, cls) => `<div class="${cls || ''}"><span class="k">${k}</span>${v}${x ? `<span class="x">${x}</span>` : ''}</div>`;
@@ -710,9 +727,9 @@ function Screen() {
       $('#title').textContent = '目前無進行中之表決';
       $('#info').innerHTML = cell('出席人數', `<span class="v num">${data.presentCount}</span>`) + cell('全體議員', `<span class="v num">${data.total}</span>`) +
         cell('說明', '<span class="v" style="font-weight:500">名單中深色為已簽到議員，淺灰為未出席</span>', '', '');
-      $('#body').innerHTML = tiles(data.members, m => m.present ? 'var(--none)' : 'var(--away)');
       $('#foot').innerHTML = '';
       $('#foot').style.display = 'none';
+      $('#body').innerHTML = tiles(data.members, m => m.present ? 'var(--none)' : 'var(--away)');
       return;
     }
     $('#foot').style.display = '';
@@ -728,15 +745,19 @@ function Screen() {
       (v.status === 'voting'
         ? cell('剩餘時間', '<span class="time num" id="sleft">--:--</span>', '', 'end')
         : cell('表決結果', `<span class="res" style="color:${TONE[v.result.tone]}">${esc(v.result.text)}</span>`, esc(v.result.note), 'end'));
-    $('#body').innerHTML = v.named
-      ? tiles(v.tiles, x => COLORS[x.s])
-      : `<div class="s-anon"><b>不記名表決</b><span>不公開個別議員投票，僅公布票數</span></div>`;
     $('#foot').innerHTML =
       keysFor(v.kind).map(k => `<div class="s-t"><span><i style="background:${FILL[k]}"></i>${L[k]}</span><span class="num" style="color:${COLORS[k]}">${t[k]}</span></div>`).join('') +
       `<div class="s-t" style="color:var(--muted)"><span><i class="box"></i>未投票</span><span class="num" style="color:var(--ink)">${t.notVoted}</span></div>` +
       `<div class="s-sum num">已投&nbsp;<b>${t.voted}</b>　出席&nbsp;<b>${t.eligible}</b>　全體&nbsp;${v.total}</div>`;
+    // 名牌最後才排，才能量到扣除其他區塊後的實際空間
+    $('#body').innerHTML = v.named
+      ? tiles(v.tiles, x => COLORS[x.s])
+      : `<div class="s-anon"><b>不記名表決</b><span>不公開個別議員投票，僅公布票數</span></div>`;
     tick();
   }
+
+  let rt = null;
+  window.onresize = () => { clearTimeout(rt); rt = setTimeout(() => { if (data && location.hash.indexOf('screen') >= 0) render(); }, 150); };
 
   poll(async () => {
     const r = await api('screen');
